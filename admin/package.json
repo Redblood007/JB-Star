@@ -12,5 +12,8 @@
     "react-dom":"latest",
     "vite":"latest"
   },
-  "devDependencies": {"@capacitor/cli":"latest"}
+  "devDependencies": {
+    "@capacitor/cli":"latest",
+    "typescript":"latest"
+  }
 }
