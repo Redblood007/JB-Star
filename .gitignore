@@ -1,0 +1,26 @@
+# Firebase / secrets
+**/google-services.json
+**/GoogleService-Info.plist
+.env
+.env.*
+*.keystore
+*.jks
+service-account*.json
+
+# Node
+node_modules/
+dist/
+build/
+
+# Android
+.gradle/
+.idea/
+local.properties
+*.iml
+captures/
+.externalNativeBuild/
+.cxx/
+
+# OS
+.DS_Store
+Thumbs.db
