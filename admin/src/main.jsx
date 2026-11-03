@@ -2,18 +2,20 @@ import React, { useEffect, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { initializeApp } from 'firebase/app';
 import { getAuth, RecaptchaVerifier, onAuthStateChanged, signInWithPhoneNumber, signOut } from 'firebase/auth';
+import { getFirestore, collection, onSnapshot, addDoc, serverTimestamp } from 'firebase/firestore';
 import './styles.css';
 
-const firebaseConfig = { apiKey:'AIzaSyBH0n2tMgpm0JeX_83MZq--YrqwYRGYrBk', authDomain:'jb-star-91242.firebaseapp.com', projectId:'jb-star-91242', storageBucket:'jb-star-91242.firebasestorage.app', messagingSenderId:'594842237736', appId:'1:594842237736:web:db98fed6d92761454ae1d' };
-const auth = getAuth(initializeApp(firebaseConfig));
+const firebaseConfig = { apiKey:'AIzaSyBH0n2tMgpm0JeX_83MZq--YrqwYRGYrBk', authDomain:'jb-star-91242.firebaseapp.com', projectId:'jb-star-91242', storageBucket:'jb-star-91242.firebasestorage.app', messagingSenderId:'594842237736', appId:'1:594842237736:web/db98fed6d92761454ae1d' };
+const app = initializeApp(firebaseConfig); const auth = getAuth(app); const db = getFirestore(app);
 
 function App(){
-  const [user,setUser]=useState(undefined), [phone,setPhone]=useState(''), [code,setCode]=useState(''), [confirmation,setConfirmation]=useState(null), [msg,setMsg]=useState('');
-  const recaptcha=useRef(null);
-  useEffect(()=>onAuthStateChanged(auth,setUser),[]);
-  async function send(e){e.preventDefault();setMsg('');try{if(!recaptcha.current){recaptcha.current=new RecaptchaVerifier(auth,'recaptcha',{size:'normal'});await recaptcha.current.render();}const result=await signInWithPhoneNumber(auth,phone,recaptcha.current);setConfirmation(result);setMsg('OTP sent.');}catch(err){setMsg(err?.message||'OTP failed.');}}
-  async function verify(e){e.preventDefault();try{await confirmation.confirm(code);setMsg('Signed in.');}catch(err){setMsg(err?.message||'Invalid OTP.');}}
-  if(user)return <div className="shell"><header><b>JB★STAR ADMIN</b><button onClick={()=>signOut(auth)}>Logout</button></header><main><h1>Admin Dashboard</h1><div className="cards"><div>Users<br/><strong>Manage</strong></div><div>Content<br/><strong>Manage</strong></div><div>Live Matches<br/><strong>Manage</strong></div><div>Withdrawals<br/><strong>Review</strong></div></div></main></div>;
-  return <div className="login"><h1>JB★STAR ADMIN</h1><p>Admin Phone Login</p><form onSubmit={confirmation?verify:send}>{!confirmation?<><input value={phone} onChange={e=>setPhone(e.target.value)} placeholder="+91 phone number"/><div id="recaptcha"/></>:<input value={code} onChange={e=>setCode(e.target.value.replace(/\D/g,'').slice(0,6))} placeholder="6-digit OTP"/>}<button>{confirmation?'Verify OTP':'Send OTP'}</button></form><small>{msg}</small></div>;
+ const [user,setUser]=useState(undefined),[phone,setPhone]=useState(''),[code,setCode]=useState(''),[confirmation,setConfirmation]=useState(null),[msg,setMsg]=useState(''),[users,setUsers]=useState([]),[content,setContent]=useState([]),[title,setTitle]=useState(''); const recaptcha=useRef(null);
+ useEffect(()=>onAuthStateChanged(auth,setUser),[]);
+ useEffect(()=>{if(!user)return; const u=onSnapshot(collection(db,'users'),s=>setUsers(s.docs.map(d=>({id:d.id,...d.data()})))); const c=onSnapshot(collection(db,'content'),s=>setContent(s.docs.map(d=>({id:d.id,...d.data()})))); return()=>{u();c();};},[user]);
+ async function send(e){e.preventDefault();setMsg('');try{if(!recaptcha.current){recaptcha.current=new RecaptchaVerifier(auth,'recaptcha',{size:'normal'});await recaptcha.current.render();}setConfirmation(await signInWithPhoneNumber(auth,phone,recaptcha.current));setMsg('OTP sent.');}catch(err){setMsg(err?.message||'OTP failed.');}}
+ async function verify(e){e.preventDefault();try{await confirmation.confirm(code);setMsg('Signed in.');}catch(err){setMsg(err?.message||'Invalid OTP.');}}
+ async function addContent(e){e.preventDefault();if(!title.trim())return;await addDoc(collection(db,'content'),{title:title.trim(),meta:'Published from Admin',createdAt:serverTimestamp()});setTitle('');setMsg('Content published to Firebase.');}
+ if(user)return <div className="shell"><header><b>JB★STAR ADMIN</b><button onClick={()=>signOut(auth)}>Logout</button></header><main><h1>Admin Dashboard</h1><div className="cards"><div>Users<br/><strong>{users.length}</strong></div><div>Content<br/><strong>{content.length}</strong></div><div>Live Matches<br/><strong>Firebase</strong></div><div>Withdrawals<br/><strong>Review</strong></div></div><section style={{marginTop:30}}><h2>Publish Content</h2><form onSubmit={addContent} style={{display:'flex',gap:10,flexWrap:'wrap'}}><input value={title} onChange={e=>setTitle(e.target.value)} placeholder="Content title" style={{padding:12,borderRadius:10}}/><button type="submit">Publish</button></form><p>Every published item is stored in Firestore and appears in the User app in real time.</p></section></main></div>;
+ return <div className="login"><h1>JB★STAR ADMIN</h1><p>Admin Phone Login</p><form onSubmit={confirmation?verify:send}>{!confirmation?<><input value={phone} onChange={e=>setPhone(e.target.value)} placeholder="+91 phone number"/><div id="recaptcha"/></>:<input value={code} onChange={e=>setCode(e.target.value.replace(/\D/g,'').slice(0,6))} placeholder="6-digit OTP"/>}<button>{confirmation?'Verify OTP':'Send OTP'}</button></form><small>{msg}</small></div>;
 }
 createRoot(document.getElementById('root')).render(<App/>);
