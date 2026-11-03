@@ -1,3 +1,123 @@
-import React from 'react';import{createRoot}from'react-dom/client';import'./styles.css';
-const matches=[{title:'Live Cricket',meta:'LIVE • Score & commentary'},{title:'Today’s Highlights',meta:'HD • Cricket highlights'},{title:'Featured Shows',meta:'New episodes'}];
-function App(){return <div className="app"><header><div className="logo">JB<span>★</span>STAR</div><nav><a>Home</a><a>Live</a><a>Sports</a><a>Movies</a><a>Shows</a></nav><button>Login</button></header><main><section className="hero"><div><p className="eyebrow">LIVE SPORTS • ENTERTAINMENT</p><h1>Watch what you love.</h1><p className="sub">Live cricket, sports and entertainment in one place.</p><div><button className="primary">Watch Live</button><button className="secondary">Explore</button></div></div></section><section className="section"><div className="sectionHead"><h2>Live & Featured</h2><span>View all</span></div><div className="grid">{matches.map(m=><article key={m.title}><div className="poster"><span>JB★</span></div><h3>{m.title}</h3><p>{m.meta}</p></article>)}</div></section></main></div>};createRoot(document.getElementById('root')).render(<App/>);
+import React, { useEffect, useRef, useState } from 'react';
+import { createRoot } from 'react-dom/client';
+import {
+  RecaptchaVerifier,
+  onAuthStateChanged,
+  signInWithPhoneNumber,
+  signOut,
+} from 'firebase/auth';
+import { auth } from './firebase';
+import './styles.css';
+
+const matches = [
+  { title: 'Live Cricket', meta: 'LIVE • Score & commentary' },
+  { title: 'Today’s Highlights', meta: 'HD • Cricket highlights' },
+  { title: 'Featured Shows', meta: 'New episodes' },
+];
+
+function Login({ onClose }) {
+  const [phone, setPhone] = useState('');
+  const [code, setCode] = useState('');
+  const [confirmation, setConfirmation] = useState(null);
+  const [message, setMessage] = useState('');
+  const [busy, setBusy] = useState(false);
+  const recaptchaRef = useRef(null);
+
+  useEffect(() => {
+    if (!recaptchaRef.current) {
+      recaptchaRef.current = new RecaptchaVerifier(auth, 'recaptcha-container', {
+        size: 'normal',
+      });
+      recaptchaRef.current.render().catch(() => {});
+    }
+    return () => {
+      recaptchaRef.current?.clear();
+      recaptchaRef.current = null;
+    };
+  }, []);
+
+  async function sendOtp(event) {
+    event.preventDefault();
+    setMessage('');
+    if (!/^\+91\d{10}$/.test(phone)) {
+      setMessage('Enter a valid Indian number, e.g. +919876543210');
+      return;
+    }
+    setBusy(true);
+    try {
+      const result = await signInWithPhoneNumber(auth, phone, recaptchaRef.current);
+      setConfirmation(result);
+      setMessage('OTP sent. Check your SMS.');
+    } catch (error) {
+      setMessage(error?.message || 'Could not send OTP. Check Firebase Phone Auth settings.');
+      recaptchaRef.current?.clear();
+      recaptchaRef.current = null;
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function verifyOtp(event) {
+    event.preventDefault();
+    if (!confirmation || !/^\d{6}$/.test(code)) return;
+    setBusy(true);
+    try {
+      await confirmation.confirm(code);
+      onClose();
+    } catch (error) {
+      setMessage(error?.message || 'Invalid OTP.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="modalBackdrop">
+      <div className="loginCard">
+        <button className="close" onClick={onClose} aria-label="Close">×</button>
+        <div className="logo large">JB<span>★</span>STAR</div>
+        <h2>Sign in to JB-Star</h2>
+        <p className="muted">Use your phone number to continue.</p>
+        {!confirmation ? (
+          <form onSubmit={sendOtp}>
+            <label>Phone number</label>
+            <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+91 9876543210" inputMode="tel" />
+            <div id="recaptcha-container" className="recaptcha" />
+            <button className="primary full" disabled={busy}>{busy ? 'Sending OTP…' : 'Send OTP'}</button>
+          </form>
+        ) : (
+          <form onSubmit={verifyOtp}>
+            <label>6-digit OTP</label>
+            <input value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))} placeholder="Enter OTP" inputMode="numeric" />
+            <button className="primary full" disabled={busy}>{busy ? 'Verifying…' : 'Verify & Continue'}</button>
+          </form>
+        )}
+        {message && <p className="status">{message}</p>}
+      </div>
+    </div>
+  );
+}
+
+function App() {
+  const [user, setUser] = useState(undefined);
+  const [showLogin, setShowLogin] = useState(false);
+
+  useEffect(() => onAuthStateChanged(auth, setUser), []);
+
+  return (
+    <div className="app">
+      <header>
+        <div className="logo">JB<span>★</span>STAR</div>
+        <nav><a>Home</a><a>Live</a><a>Sports</a><a>Movies</a><a>Shows</a></nav>
+        {user ? <button onClick={() => signOut(auth)}>Logout</button> : <button onClick={() => setShowLogin(true)}>Login</button>}
+      </header>
+      <main>
+        <section className="hero"><div><p className="eyebrow">LIVE SPORTS • ENTERTAINMENT</p><h1>Watch what you love.</h1><p className="sub">Live cricket, sports and entertainment in one place.</p><div><button className="primary" onClick={() => setShowLogin(true)}>Watch Live</button><button className="secondary">Explore</button></div></div></section>
+        <section className="section"><div className="sectionHead"><h2>Live & Featured</h2><span>View all</span></div><div className="grid">{matches.map(m => <article key={m.title}><div className="poster"><span>JB★</span></div><h3>{m.title}</h3><p>{m.meta}</p></article>)}</div></section>
+      </main>
+      {showLogin && <Login onClose={() => setShowLogin(false)} />}
+    </div>
+  );
+}
+
+createRoot(document.getElementById('root')).render(<App />);
