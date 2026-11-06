@@ -36,16 +36,39 @@ function Login({ phone, setPhone, code, setCode, confirmation, setConfirmation, 
   async function sendOtp(event) {
     event.preventDefault();
     setMsg('');
+    const digits = phone.trim().replace(/[\\s()-]/g, '');
+    const normalizedPhone = digits.startsWith('+')
+      ? digits
+      : digits.startsWith('91') && digits.length === 12
+        ? `+${digits}`
+        : digits.length === 10
+          ? `+91${digits}`
+          : '';
+    if (!/^\\+[1-9]\\d{7,14}$/.test(normalizedPhone)) {
+      setMsg('Enter a valid phone number, e.g. +91 9876543210.');
+      return;
+    }
     try {
       if (!recaptcha.current) {
         recaptcha.current = new RecaptchaVerifier(auth, 'recaptcha', { size: 'normal' });
       }
       await recaptcha.current.render();
-      const result = await signInWithPhoneNumber(auth, phone, recaptcha.current);
+      const result = await signInWithPhoneNumber(auth, normalizedPhone, recaptcha.current);
       setConfirmation(result);
-      setMsg('OTP sent.');
+      setMsg('OTP sent. Check SMS messages.');
     } catch (error) {
-      setMsg(error?.message || 'OTP failed.');
+      try { await recaptcha.current?.clear(); } catch {}
+      recaptcha.current = null;
+      const messages = {
+        'auth/operation-not-allowed': 'Phone sign-in is not enabled in Firebase Authentication.',
+        'auth/invalid-phone-number': 'Invalid phone number. Use +91 followed by your 10-digit number.',
+        'auth/captcha-check-failed': 'reCAPTCHA verification failed. Reload the app and try again.',
+        'auth/too-many-requests': 'SMS limit reached or too many attempts. Try again later.',
+        'auth/quota-exceeded': 'Firebase SMS quota exceeded. Try later or check the Firebase plan.',
+        'auth/app-not-authorized': 'This app domain is not authorized in Firebase Authentication settings.',
+        'auth/billing-not-enabled': 'Firebase billing is not enabled for this SMS operation.',
+      };
+      setMsg(messages[error?.code] || `OTP failed (${error?.code || 'unknown'}): ${error?.message || 'Check Firebase Phone Authentication settings.'}`);
     }
   }
 
