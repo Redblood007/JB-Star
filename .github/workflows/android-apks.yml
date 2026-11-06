@@ -1,3 +1,4 @@
+# Build both JB-Star Android applications on pushes to main.
 name: JB-Star Android APKs
 
 on:
