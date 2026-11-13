@@ -36,6 +36,9 @@ jobs:
         run: npx cap add android
       - name: Sync Capacitor
         run: npx cap sync android
+      - name: Generate debug signing fingerprints
+        working-directory: web/android
+        run: ./gradlew signingReport > signing-report.txt
       - name: Build debug APK
         working-directory: web/android
         run: ./gradlew assembleDebug
@@ -43,7 +46,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: JB-Star-User-APK
-          path: web/android/app/build/outputs/apk/debug/app-debug.apk
+          path: |
+            web/android/app/build/outputs/apk/debug/app-debug.apk
+            web/android/signing-report.txt
           if-no-files-found: error
           retention-days: 14
 
@@ -73,6 +78,9 @@ jobs:
         run: npx cap add android
       - name: Sync Capacitor
         run: npx cap sync android
+      - name: Generate debug signing fingerprints
+        working-directory: admin/android
+        run: ./gradlew signingReport > signing-report.txt
       - name: Build debug APK
         working-directory: admin/android
         run: ./gradlew assembleDebug
@@ -80,6 +88,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: JB-Star-Admin-APK
-          path: admin/android/app/build/outputs/apk/debug/app-debug.apk
+          path: |
+            admin/android/app/build/outputs/apk/debug/app-debug.apk
+            admin/android/signing-report.txt
           if-no-files-found: error
           retention-days: 14
