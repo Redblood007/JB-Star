@@ -65,7 +65,7 @@ function Login({ onClose }) {
     <div className="modalBackdrop">
       <div className="loginCard">
         <button className="close" onClick={onClose}>×</button>
-        <div className="logo large">JB<span>★</span>STAR</div>
+        <div className="logo large brand"><img src="/jb-star-logo.svg" alt="JB-Star logo" />JB-STAR</div>
         <h2>Sign in to JB-Star</h2>
         <p className="muted">Use your phone number to continue.</p>
         {!confirmation ? (
@@ -145,7 +145,7 @@ function App() {
   return (
     <div className="app">
       <header>
-        <div className="logo">JB<span>★</span>STAR</div>
+        <div className="logo brand"><img src="/jb-star-logo.svg" alt="JB-Star logo" />JB-STAR</div>
         <nav><a>Home</a><a>Live</a><a>Sports</a><a>Movies</a><a>Shows</a></nav>
         {user ? <button onClick={() => signOut(auth)}>Logout</button> : <button onClick={() => setShowLogin(true)}>Login</button>}
       </header>
