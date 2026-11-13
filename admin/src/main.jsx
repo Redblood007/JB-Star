@@ -36,7 +36,7 @@ function Login({ phone, setPhone, code, setCode, confirmation, setConfirmation, 
   async function sendOtp(event) {
     event.preventDefault();
     setMsg('');
-    const digits = phone.trim().replace(/[\\s()-]/g, '');
+    const digits = phone.trim().replace(/[\s()-]/g, '');
     const normalizedPhone = digits.startsWith('+')
       ? digits
       : digits.startsWith('91') && digits.length === 12
@@ -44,7 +44,7 @@ function Login({ phone, setPhone, code, setCode, confirmation, setConfirmation, 
         : digits.length === 10
           ? `+91${digits}`
           : '';
-    if (!/^\\+[1-9]\\d{7,14}$/.test(normalizedPhone)) {
+    if (!/^\+[1-9]\d{7,14}$/.test(normalizedPhone)) {
       setMsg('Enter a valid phone number, e.g. +91 9876543210.');
       return;
     }
