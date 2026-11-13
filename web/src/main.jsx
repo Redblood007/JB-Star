@@ -5,7 +5,7 @@ import { auth } from './firebase';
 import { subscribeToContent, subscribeToMatches, upsertUser } from './data';
 import './styles.css';
 
-const TEST_STREAM = 'https://cph-p2p-msl.akamaized.net/hls/live/2000341/test/master.m3u8';
+const DEFAULT_STREAM = ''; // Configure an authorized broadcast URL in Firebase/Admin.
 
 function Login({ onClose }) {
   const [phone, setPhone] = useState('');
@@ -88,39 +88,21 @@ function Login({ onClose }) {
   );
 }
 
-function LivePlayer({ streamUrl }) {
-  const videoRef = useRef(null);
-  const [error, setError] = useState('');
-  useEffect(() => {
-    const video = videoRef.current;
-    if (!video || !streamUrl) return undefined;
-    setError('');
-    video.src = streamUrl;
-    const onError = () => setError('This HLS stream cannot be played in this browser/device.');
-    video.addEventListener('error', onError);
-    return () => {
-      video.removeEventListener('error', onError);
-      video.removeAttribute('src');
-      video.load();
-    };
-  }, [streamUrl]);
-  return (
-    <section className="section">
-      <div className="sectionHead"><h2>🔴 Live Stream</h2><span>TEST STREAM</span></div>
-      <div style={{ background: '#000', borderRadius: 16, overflow: 'hidden' }}>
-        <video ref={videoRef} controls playsInline muted autoPlay style={{ width: '100%', display: 'block', minHeight: 220 }} />
-      </div>
-      {error && <p className="status">{error}</p>}
-      <p className="muted" style={{ marginTop: 10 }}>Development test stream. Replace this URL with your authorized production stream.</p>
-    </section>
-  );
+function getYouTubeId(value = '') {
+  try { const url = new URL(value); if (url.hostname.includes('youtu.be')) return url.pathname.slice(1); if (url.hostname.includes('youtube.com')) { if (url.pathname === '/watch') return url.searchParams.get('v') || ''; const parts = url.pathname.split('/').filter(Boolean); if (['live','embed','shorts'].includes(parts[0])) return parts[1] || ''; } } catch {}
+  return '';
 }
-
+function LivePlayer({ streamUrl }) {
+  const videoRef = useRef(null); const [error, setError] = useState(''); const youtubeId = getYouTubeId(streamUrl || '');
+  useEffect(() => { const video = videoRef.current; if (!video || !streamUrl || youtubeId) return undefined; setError(''); video.src = streamUrl; const onError = () => setError('This HLS stream cannot be played in this browser/device.'); video.addEventListener('error', onError); return () => { video.removeEventListener('error', onError); video.removeAttribute('src'); video.load(); }; }, [streamUrl, youtubeId]);
+  return <section className="section"><div className="sectionHead"><h2>🔴 Live Cricket</h2><span>{streamUrl ? 'LIVE PLAYER' : 'AWAITING BROADCAST'}</span></div><div className="liveFrame">{youtubeId ? <iframe title="JB-Star authorized YouTube live stream" src={'https://www.youtube-nocookie.com/embed/' + youtubeId} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowFullScreen /> : streamUrl ? <video ref={videoRef} controls playsInline style={{ width:'100%', display:'block', minHeight:220 }} /> : <div className="liveEmpty"><strong>JB-STAR LIVE</strong><p>No authorized broadcast is connected yet.</p><small>Add a YouTube Live watch URL or HLS playback URL through Admin.</small></div>}</div>{error && <p className="status">{error}</p>}<p className="muted" style={{ marginTop:10 }}>Only broadcasts you own or are licensed to distribute should be added.</p></section>;
+}
 function App() {
   const [user, setUser] = useState(undefined);
   const [showLogin, setShowLogin] = useState(false);
   const [content, setContent] = useState([]);
   const [matches, setMatches] = useState([]);
+  const [selectedMatch, setSelectedMatch] = useState(null);
 
   useEffect(() => onAuthStateChanged(auth, async (u) => {
     setUser(u);
@@ -158,15 +140,16 @@ function App() {
             <button className="primary" onClick={() => document.getElementById('live-player')?.scrollIntoView({ behavior: 'smooth' })}>Watch Live</button>
           </div>
         </section>
-        <div id="live-player"><LivePlayer streamUrl={TEST_STREAM} /></div>
+        <div id="live-player"><LivePlayer streamUrl={selectedMatch?.streamUrl || DEFAULT_STREAM} /></div>
         <section className="section">
           <div className="sectionHead"><h2>Live & Featured</h2><span>{user ? 'Firebase connected' : 'Login to continue'}</span></div>
           <div className="grid">
             {cards.map((match) => (
-              <article key={match.id}>
-                <div className="poster"><span>JB★</span></div>
+              <article key={match.id} className="matchCard">
+                <div className="poster"><span>{match.status === 'LIVE' ? '🔴 LIVE' : 'JB★'}</span></div>
                 <h3>{match.title || match.name || 'Untitled'}</h3>
-                <p>{match.meta || match.status || 'Firebase data'}</p>
+                <p>{match.teamA && match.teamB ? match.teamA + ' vs ' + match.teamB : (match.meta || match.status || 'Match details coming soon')}</p>
+                {match.streamUrl && <button className="secondary" onClick={() => { setSelectedMatch(match); document.getElementById('live-player')?.scrollIntoView({ behavior: 'smooth' }); }}>Watch match</button>}
               </article>
             ))}
           </div>
