@@ -4,15 +4,13 @@ import { getFirestore } from 'firebase/firestore';
 import { getAnalytics, isSupported } from 'firebase/analytics';
 
 const firebaseConfig = {
-  // Keep this in sync with the Firebase Web App config for project jb-star-91242.
-  // The previous user-app key contained a character mismatch versus the Admin app.
-  apiKey: 'AIzaSyBH0n2tMgpm0JeX_83MZq--YrqwYRGYrBk',
-  authDomain: 'jb-star-91242.firebaseapp.com',
-  projectId: 'jb-star-91242',
-  storageBucket: 'jb-star-91242.firebasestorage.app',
-  messagingSenderId: '594842237736',
-  appId: '1:594842237736:web:db098fed6d92761454ae1d',
-  measurementId: 'G-T5D7V1DWQ8',
+  apiKey: 'AIzaSyCrW0Fk55Cr6z5Uxrgze1py37A7Aa5x5uc',
+  authDomain: 'jb-star-7c8e7.firebaseapp.com',
+  projectId: 'jb-star-7c8e7',
+  storageBucket: 'jb-star-7c8e7.firebasestorage.app',
+  messagingSenderId: '209045478988',
+  appId: '1:209045478988:web:ae8fed683896f8eb2a5ee9',
+  measurementId: 'G-0EPVH7BB30',
 };
 
 const app = initializeApp(firebaseConfig);
