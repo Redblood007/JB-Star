@@ -4,7 +4,9 @@ import { getFirestore } from 'firebase/firestore';
 import { getAnalytics, isSupported } from 'firebase/analytics';
 
 const firebaseConfig = {
-  apiKey: 'AIzaSyBHon2tMgpmOJeX_83MZq--YrqwYRGYrBk',
+  // Keep this in sync with the Firebase Web App config for project jb-star-91242.
+  // The previous user-app key contained a character mismatch versus the Admin app.
+  apiKey: 'AIzaSyBH0n2tMgpm0JeX_83MZq--YrqwYRGYrBk',
   authDomain: 'jb-star-91242.firebaseapp.com',
   projectId: 'jb-star-91242',
   storageBucket: 'jb-star-91242.firebasestorage.app',
