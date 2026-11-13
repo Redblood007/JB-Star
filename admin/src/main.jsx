@@ -18,12 +18,13 @@ import {
 import './styles.css';
 
 const firebaseConfig = {
-  apiKey: 'AIzaSyBH0n2tMgpm0JeX_83MZq--YrqwYRGYrBk',
-  authDomain: 'jb-star-91242.firebaseapp.com',
-  projectId: 'jb-star-91242',
-  storageBucket: 'jb-star-91242.firebasestorage.app',
-  messagingSenderId: '594842237736',
-  appId: '1:594842237736:web:db98fed6d92761454ae1d',
+  apiKey: 'AIzaSyCrW0Fk55Cr6z5Uxrgze1py37A7Aa5x5uc',
+  authDomain: 'jb-star-7c8e7.firebaseapp.com',
+  projectId: 'jb-star-7c8e7',
+  storageBucket: 'jb-star-7c8e7.firebasestorage.app',
+  messagingSenderId: '209045478988',
+  appId: '1:209045478988:web:ae8fed683896f8eb2a5ee9',
+  measurementId: 'G-0EPVH7BB30',
 };
 
 const app = initializeApp(firebaseConfig);
