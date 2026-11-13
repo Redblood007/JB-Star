@@ -11,16 +11,31 @@ function Login({ onClose }) {
   const [phone, setPhone] = useState('');
   const [code, setCode] = useState('');
   const [confirmation, setConfirmation] = useState(null);
-  const [message, setMessage] = useState('');
+  const [message, setMessage] = useState('Loading security verification…');
   const [busy, setBusy] = useState(false);
+  const [recaptchaReady, setRecaptchaReady] = useState(false);
   const recaptchaRef = useRef(null);
 
   useEffect(() => {
-    if (!recaptchaRef.current) {
-      recaptchaRef.current = new RecaptchaVerifier(auth, 'recaptcha-container', { size: 'normal' });
-      recaptchaRef.current.render().catch(() => {});
+    let active = true;
+    async function initializeRecaptcha() {
+      try {
+        const container = document.getElementById('recaptcha-container');
+        if (!container) throw new Error('Security verification area is missing. Close and reopen Login.');
+        const verifier = new RecaptchaVerifier(auth, container, { size: 'normal' });
+        recaptchaRef.current = verifier;
+        await verifier.render();
+        if (active) {
+          setRecaptchaReady(true);
+          setMessage('');
+        }
+      } catch (error) {
+        if (active) setMessage('Security verification could not load: ' + (error?.message || error?.code || 'Unknown error'));
+      }
     }
+    initializeRecaptcha();
     return () => {
+      active = false;
       recaptchaRef.current?.clear();
       recaptchaRef.current = null;
     };
@@ -29,19 +44,22 @@ function Login({ onClose }) {
   async function sendOtp(event) {
     event.preventDefault();
     setMessage('');
-    if (!/^\+91\d{10}$/.test(phone)) {
+    const normalizedPhone = phone.replace(/[\s()-]/g, '');
+    if (!/^\+91\d{10}$/.test(normalizedPhone)) {
       setMessage('Enter a valid Indian number, e.g. +919876543210');
+      return;
+    }
+    if (!recaptchaReady || !recaptchaRef.current) {
+      setMessage('Security verification is not ready. Wait for the reCAPTCHA box, then try again.');
       return;
     }
     setBusy(true);
     try {
-      const result = await signInWithPhoneNumber(auth, phone, recaptchaRef.current);
+      const result = await signInWithPhoneNumber(auth, normalizedPhone, recaptchaRef.current);
       setConfirmation(result);
       setMessage('OTP sent. Check your SMS.');
     } catch (error) {
-      setMessage(error?.message || 'Could not send OTP.');
-      recaptchaRef.current?.clear();
-      recaptchaRef.current = null;
+      setMessage('Firebase ' + (error?.code || 'error') + ': ' + (error?.message || 'Could not send OTP.'));
     } finally {
       setBusy(false);
     }
@@ -55,7 +73,7 @@ function Login({ onClose }) {
       await confirmation.confirm(code);
       onClose();
     } catch (error) {
-      setMessage(error?.message || 'Invalid OTP.');
+      setMessage('Firebase ' + (error?.code || 'error') + ': ' + (error?.message || 'Invalid OTP.'));
     } finally {
       setBusy(false);
     }
@@ -73,7 +91,7 @@ function Login({ onClose }) {
             <label>Phone number</label>
             <input value={phone} onChange={(event) => setPhone(event.target.value)} placeholder="+91 9876543210" inputMode="tel" />
             <div id="recaptcha-container" className="recaptcha" />
-            <button className="primary full" disabled={busy}>{busy ? 'Sending OTP…' : 'Send OTP'}</button>
+            <button className="primary full" disabled={busy || !recaptchaReady}>{busy ? 'Sending OTP…' : !recaptchaReady ? 'Loading verification…' : 'Send OTP'}</button>
           </form>
         ) : (
           <form onSubmit={verifyOtp}>
