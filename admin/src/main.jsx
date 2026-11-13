@@ -111,6 +111,21 @@ function Login({ phone, setPhone, code, setCode, confirmation, setConfirmation, 
 }
 
 function Dashboard({ users, content, title, setTitle, setMsg }) {
+  const [matchTitle, setMatchTitle] = useState('');
+  const [teamA, setTeamA] = useState('');
+  const [teamB, setTeamB] = useState('');
+  const [matchStatus, setMatchStatus] = useState('UPCOMING');
+  const [streamUrl, setStreamUrl] = useState('');
+  async function publishMatch(event) {
+    event.preventDefault();
+    const cleanUrl = streamUrl.trim();
+    if (!matchTitle.trim() || !teamA.trim() || !teamB.trim()) { setMsg('Enter the match title and both team names.'); return; }
+    if (cleanUrl && !/^https:\/\//i.test(cleanUrl)) { setMsg('Stream URL must begin with https://'); return; }
+    try {
+      await addDoc(collection(db, 'matches'), { title: matchTitle.trim(), teamA: teamA.trim(), teamB: teamB.trim(), status: matchStatus, streamUrl: cleanUrl, createdAt: serverTimestamp() });
+      setMatchTitle(''); setTeamA(''); setTeamB(''); setStreamUrl(''); setMsg('Match published to JB-Star.');
+    } catch (error) { setMsg(error?.message || 'Match publishing failed.'); }
+  }
   async function publish(event) {
     event.preventDefault();
     const cleanTitle = title.trim();
@@ -142,6 +157,18 @@ function Dashboard({ users, content, title, setTitle, setMsg }) {
           <div>Live Matches<br /><strong>Firebase</strong></div>
           <div>Withdrawals<br /><strong>Review</strong></div>
         </div>
+        <section style={{ marginTop: 30 }}>
+          <h2>Publish Live Cricket Match</h2>
+          <form onSubmit={publishMatch} className="matchPublishForm">
+            <input value={matchTitle} onChange={(event) => setMatchTitle(event.target.value)} placeholder="Match title (e.g. Team A vs Team B)" />
+            <input value={teamA} onChange={(event) => setTeamA(event.target.value)} placeholder="Team A" />
+            <input value={teamB} onChange={(event) => setTeamB(event.target.value)} placeholder="Team B" />
+            <select value={matchStatus} onChange={(event) => setMatchStatus(event.target.value)}><option value="UPCOMING">Upcoming</option><option value="LIVE">Live</option><option value="COMPLETED">Completed</option></select>
+            <input value={streamUrl} onChange={(event) => setStreamUrl(event.target.value)} placeholder="Authorized YouTube watch URL or HLS URL (optional)" />
+            <button type="submit">Publish Match</button>
+          </form>
+          <p>Use only a broadcast you own or are licensed to distribute. Keep stream keys and private credentials out of this field.</p>
+        </section>
         <section style={{ marginTop: 30 }}>
           <h2>Publish Content</h2>
           <form onSubmit={publish} style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
