@@ -26,7 +26,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24.12.0
       - name: Install dependencies
         working-directory: web
         run: npm install
@@ -35,6 +35,8 @@ jobs:
         run: npm run build -- --base=/JB-Star/
       - name: Configure Pages
         uses: actions/configure-pages@v5
+        with:
+          enablement: true
       - name: Upload website
         uses: actions/upload-pages-artifact@v3
         with:
