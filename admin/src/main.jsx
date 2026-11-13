@@ -84,7 +84,7 @@ function Login({ phone, setPhone, code, setCode, confirmation, setConfirmation, 
 
   return (
     <div className="login">
-      <h1>JB★STAR ADMIN</h1>
+      <h1 className="adminBrand"><img src="/jb-star-logo.svg" alt="JB-Star logo" />JB-STAR ADMIN</h1>
       <p>Admin Phone Login</p>
       <form onSubmit={confirmation ? verifyOtp : sendOtp}>
         {!confirmation ? (
@@ -131,7 +131,7 @@ function Dashboard({ users, content, title, setTitle, setMsg }) {
   return (
     <div className="shell">
       <header>
-        <b>JB★STAR ADMIN</b>
+        <b className="adminBrand"><img src="/jb-star-logo.svg" alt="JB-Star logo" />JB-STAR ADMIN</b>
         <button type="button" onClick={() => signOut(auth)}>Logout</button>
       </header>
       <main>
