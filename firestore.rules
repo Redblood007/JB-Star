@@ -1,0 +1,28 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Replace with the administrator's Firebase Authentication UID before granting admin access.
+    function isAdmin() {
+      return request.auth != null && request.auth.uid == 'SET_ADMIN_UID_HERE';
+    }
+
+    match /users/{userId} {
+      allow create, read, update: if request.auth != null && request.auth.uid == userId;
+      allow read, list, update, delete: if isAdmin();
+    }
+
+    match /content/{documentId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /matches/{documentId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
