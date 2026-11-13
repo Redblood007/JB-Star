@@ -31,6 +31,9 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
+// Replace this placeholder with the authorized administrator's Firebase Auth UID before enabling Admin access.
+const ADMIN_UID = 'SET_ADMIN_UID_HERE';
+
 function Login({ phone, setPhone, code, setCode, confirmation, setConfirmation, msg, setMsg }) {
   const recaptcha = useRef(null);
 
@@ -216,7 +219,7 @@ function App() {
     };
   }, [user]);
 
-  if (user) {
+  if (user && user.uid === ADMIN_UID) {
     return (
       <Dashboard
         users={users}
@@ -225,6 +228,16 @@ function App() {
         setTitle={setTitle}
         setMsg={setMsg}
       />
+    );
+  }
+
+  if (user && user.uid !== ADMIN_UID) {
+    return (
+      <div className="login">
+        <h1 className="adminBrand"><img src="/jb-star-logo.svg" alt="JB-Star logo" />JB-STAR ADMIN</h1>
+        <p>This account is not authorized for the Admin dashboard.</p>
+        <button type="button" onClick={() => signOut(auth)}>Sign out</button>
+      </div>
     );
   }
 
