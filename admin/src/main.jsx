@@ -90,7 +90,7 @@ function Login({ phone, setPhone, code, setCode, confirmation, setConfirmation, 
 
   return (
     <div className="login">
-      <h1 className="adminBrand"><img src="/jb-star-logo.svg" alt="JB-Star logo" />JB-STAR ADMIN</h1>
+      <h1 className="adminBrand"><img src={`${import.meta.env.BASE_URL}jb-star-logo.svg`} alt="JB-Star logo" />JB-STAR ADMIN</h1>
       <p>Admin Phone Login</p>
       <form onSubmit={confirmation ? verifyOtp : sendOtp}>
         {!confirmation ? (
@@ -152,7 +152,7 @@ function Dashboard({ users, content, matches, title, setTitle, setMsg, msg }) {
   return (
     <div className="shell">
       <header>
-        <b className="adminBrand"><img src="/jb-star-logo.svg" alt="JB-Star logo" />JB-STAR ADMIN</b>
+        <b className="adminBrand"><img src={`${import.meta.env.BASE_URL}jb-star-logo.svg`} alt="JB-Star logo" />JB-STAR ADMIN</b>
         <button type="button" onClick={() => signOut(auth)}>Logout</button>
       </header>
       <main>
@@ -249,7 +249,7 @@ function App() {
   if (user && user.uid !== ADMIN_UID) {
     return (
       <div className="login">
-        <h1 className="adminBrand"><img src="/jb-star-logo.svg" alt="JB-Star logo" />JB-STAR ADMIN</h1>
+        <h1 className="adminBrand"><img src={`${import.meta.env.BASE_URL}jb-star-logo.svg`} alt="JB-Star logo" />JB-STAR ADMIN</h1>
         <p>This account is not authorized for the Admin dashboard.</p>
         <button type="button" onClick={() => signOut(auth)}>Sign out</button>
       </div>
