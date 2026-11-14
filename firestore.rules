@@ -1,9 +1,9 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Replace with the administrator's Firebase Authentication UID before granting admin access.
+    // JB STAR administrator account UID.
     function isAdmin() {
-      return request.auth != null && request.auth.uid == 'SET_ADMIN_UID_HERE';
+      return request.auth != null && request.auth.uid == 'GK24JSFswVerd7cqvhdfmHPb93K3';
     }
 
     match /users/{userId} {
