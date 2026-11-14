@@ -27,12 +27,18 @@ jobs:
       - name: Install function dependencies
         working-directory: functions
         run: npm install
-      - name: Validate Firebase credentials
+      - name: Validate and activate Firebase credentials
         env:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          CRICKETLIVEAPI_TOKEN: ${{ secrets.CRICKETLIVEAPI_TOKEN }}
         run: |
+          set -euo pipefail
           test -n "$FIREBASE_SERVICE_ACCOUNT" || (echo "::error::Missing FIREBASE_SERVICE_ACCOUNT GitHub secret" && exit 1)
+          test -n "$CRICKETLIVEAPI_TOKEN" || (echo "::error::Missing CRICKETLIVEAPI_TOKEN GitHub secret" && exit 1)
           printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > "$RUNNER_TEMP/firebase-service-account.json"
+          printf '%s' "$CRICKETLIVEAPI_TOKEN" > "$RUNNER_TEMP/cricket-token"
           echo "GOOGLE_APPLICATION_CREDENTIALS=$RUNNER_TEMP/firebase-service-account.json" >> "$GITHUB_ENV"
+      - name: Store CricketLiveAPI token in Firebase Secret Manager
+        run: firebase functions:secrets:set CRICKETLIVEAPI_TOKEN --data-file "$RUNNER_TEMP/cricket-token" --project jb-star-7c8e7
       - name: Deploy cricket API function
         run: firebase deploy --only functions:cricketApi --project jb-star-7c8e7
