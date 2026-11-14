@@ -1,8 +1,16 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#ffe36a"/><stop offset="1" stop-color="#e59a00"/></linearGradient></defs>
-<rect width="512" height="512" rx="112" fill="#090a10"/>
-<path d="M256 54 397 112 375 298 256 414 137 298 115 112Z" fill="none" stroke="url(#g)" stroke-width="25" stroke-linejoin="round"/>
-<path d="m256 117 25 77 81 1-65 48 24 78-65-47-65 47 24-78-65-48 81-1Z" fill="url(#g)"/>
-<path d="M175 330h162" stroke="#fff" stroke-width="17" stroke-linecap="round"/>
-<text x="256" y="383" text-anchor="middle" font-family="Arial,sans-serif" font-size="48" font-weight="900" fill="#fff">JB</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title">
+<title id="title">JB STAR</title>
+<defs>
+ <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fff2a8"/><stop offset=".42" stop-color="#f7c64e"/><stop offset="1" stop-color="#a85b08"/></linearGradient>
+ <radialGradient id="bg" cx=".5" cy=".35" r=".8"><stop stop-color="#20283b"/><stop offset="1" stop-color="#070910"/></radialGradient>
+ <filter id="glow"><feGaussianBlur stdDeviation="7" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+</defs>
+<rect x="10" y="10" width="492" height="492" rx="112" fill="url(#bg)" stroke="url(#gold)" stroke-width="10"/>
+<path d="M256 65 302 188 434 192 331 272 367 400 256 324 145 400 181 272 78 192 210 188Z" fill="none" stroke="url(#gold)" stroke-width="19" stroke-linejoin="round" filter="url(#glow)"/>
+<circle cx="256" cy="252" r="82" fill="#090d17" stroke="url(#gold)" stroke-width="13"/>
+<path d="m237 211 63 41-63 41Z" fill="url(#gold)"/>
+<path d="M95 354q145 95 322-2" fill="none" stroke="url(#gold)" stroke-width="12" stroke-linecap="round"/>
+<circle cx="378" cy="345" r="31" fill="#a91d25" stroke="#ffd98a" stroke-width="5"/>
+<path d="M362 325q22 19 32 40M353 337q22 19 32 40" fill="none" stroke="#fff0d2" stroke-width="3" stroke-linecap="round"/>
+<text x="256" y="458" text-anchor="middle" font-family="Arial,sans-serif" font-size="48" font-weight="900" letter-spacing="7" fill="url(#gold)">JB STAR</text>
 </svg>
