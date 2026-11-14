@@ -115,6 +115,78 @@ function LivePlayer({ streamUrl }) {
   useEffect(() => { const video = videoRef.current; if (!video || !streamUrl || youtubeId) return undefined; setError(''); video.src = streamUrl; const onError = () => setError('This HLS stream cannot be played in this browser/device.'); video.addEventListener('error', onError); return () => { video.removeEventListener('error', onError); video.removeAttribute('src'); video.load(); }; }, [streamUrl, youtubeId]);
   return <section className="section"><div className="sectionHead"><h2>🔴 Live Cricket</h2><span>{streamUrl ? 'LIVE PLAYER' : 'AWAITING BROADCAST'}</span></div><div className="liveFrame">{youtubeId ? <iframe title="JB-Star authorized YouTube live stream" src={'https://www.youtube-nocookie.com/embed/' + youtubeId} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowFullScreen /> : streamUrl ? <video ref={videoRef} controls playsInline style={{ width:'100%', display:'block', minHeight:220 }} /> : <div className="liveEmpty"><strong>JB-STAR LIVE</strong><p>No authorized broadcast is connected yet.</p><small>Add a YouTube Live watch URL or HLS playback URL through Admin.</small></div>}</div>{error && <p className="status">{error}</p>}<p className="muted" style={{ marginTop:10 }}>Only broadcasts you own or are licensed to distribute should be added.</p></section>;
 }
+
+const CRICKET_API_BASE = (import.meta.env.VITE_CRICKET_API_BASE || '').replace(/\\/$/, '');
+
+function CricketCenter() {
+  const [tab, setTab] = useState('live');
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  useEffect(() => {
+    let active = true;
+    if (!CRICKET_API_BASE) {
+      setItems([]);
+      setError('Cricket data service is not connected yet. Configure the secure API proxy to enable live scores.');
+      return () => { active = false; };
+    }
+    setLoading(true);
+    setError('');
+    fetch(`${CRICKET_API_BASE}/${tab}`, { headers: { Accept: 'application/json' } })
+      .then(async (response) => {
+        if (!response.ok) throw new Error(`Cricket service returned HTTP ${response.status}`);
+        return response.json();
+      })
+      .then((payload) => {
+        if (!active) return;
+        const data = payload?.data ?? payload?.matches ?? payload?.response ?? payload;
+        setItems(Array.isArray(data) ? data : Array.isArray(data?.matches) ? data.matches : []);
+      })
+      .catch((err) => { if (active) setError(err.message || 'Could not load cricket data.'); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, [tab]);
+
+  const value = (obj, keys, fallback = '') => {
+    for (const key of keys) {
+      const found = key.split('.').reduce((v, part) => v?.[part], obj);
+      if (found !== undefined && found !== null && found !== '') return found;
+    }
+    return fallback;
+  };
+  return (
+    <section className="section cricketCenter">
+      <div className="sectionHead"><h2>🏏 Cricket Center</h2><span>JB STAR SPORTS</span></div>
+      <div className="cricketTabs">
+        {['live', 'recent', 'upcoming'].map((name) => <button key={name} className={tab === name ? 'primary' : 'secondary'} onClick={() => setTab(name)}>{name === 'live' ? 'Live Matches' : name === 'recent' ? 'Recent Matches' : 'Upcoming'}</button>)}
+      </div>
+      {loading && <p className="muted">Loading cricket data…</p>}
+      {error && <p className="status">{error}</p>}
+      {!loading && !error && items.length === 0 && <p className="muted">No matches returned by the cricket provider.</p>}
+      <div className="grid">
+        {items.map((match, index) => {
+          const teamA = value(match, ['team_a.name', 'team_a.team_name', 'teamA', 'first_team.name', 'first_team.team_name'], 'Team A');
+          const teamB = value(match, ['team_b.name', 'team_b.team_name', 'teamB', 'second_team.name', 'second_team.team_name'], 'Team B');
+          const scoreA = value(match, ['team_a.score', 'first_team.score', 'score_a', 'scoreA']);
+          const scoreB = value(match, ['team_b.score', 'second_team.score', 'score_b', 'scoreB']);
+          const status = value(match, ['state', 'status', 'match_status', 'result'], 'Match details');
+          const title = value(match, ['match_desc', 'match_title', 'title', 'name'], `${teamA} vs ${teamB}`);
+          const venue = value(match, ['venue.name', 'venue', 'ground']);
+          const date = value(match, ['start_time', 'start_date', 'date', 'match_date']);
+          return <article className="matchCard" key={value(match, ['match_id', 'id'], index)}>
+            <div className="poster"><span>{tab === 'live' ? '🔴 LIVE' : tab === 'upcoming' ? 'UPCOMING' : 'RESULT'}</span></div>
+            <h3>{title}</h3>
+            <p><strong>{teamA}</strong>{scoreA ? ` · ${scoreA}` : ''}</p>
+            <p><strong>{teamB}</strong>{scoreB ? ` · ${scoreB}` : ''}</p>
+            <p>{status}</p>
+            {(date || venue) && <small>{[date, venue].filter(Boolean).join(' · ')}</small>}
+          </article>;
+        })}
+      </div>
+    </section>
+  );
+}
+
 function App() {
   const [user, setUser] = useState(undefined);
   const [showLogin, setShowLogin] = useState(false);
@@ -158,7 +230,7 @@ function App() {
             <button className="primary" onClick={() => document.getElementById('live-player')?.scrollIntoView({ behavior: 'smooth' })}>Watch Live</button>
           </div>
         </section>
-        <div id="live-player"><LivePlayer streamUrl={selectedMatch?.streamUrl || DEFAULT_STREAM} /></div>
+        <div id="live-player"><LivePlayer streamUrl={selectedMatch?.streamUrl || DEFAULT_STREAM} /></div>\n        <CricketCenter />
         <section className="section">
           <div className="sectionHead"><h2>Live & Featured</h2><span>{user ? 'Firebase connected' : 'Login to continue'}</span></div>
           <div className="grid">
