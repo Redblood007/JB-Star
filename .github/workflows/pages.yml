@@ -1,4 +1,4 @@
-name: Deploy JB-Star website to GitHub Pages
+name: Deploy JB-Star website to GitHub Pages (single production workflow)
 
 on:
   push:
