@@ -33,6 +33,11 @@ jobs:
       - name: Build website
         working-directory: web
         run: npm run build -- --base=/JB-Star/
+      - name: Build admin website
+        working-directory: admin
+        run: npm install && npm run build -- --base=/JB-Star/admin/
+      - name: Combine website and admin portal
+        run: mkdir -p web/dist/admin && cp -R admin/dist/. web/dist/admin/
       - name: Configure Pages
         uses: actions/configure-pages@v5
         with:
