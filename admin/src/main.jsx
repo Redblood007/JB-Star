@@ -13,6 +13,8 @@ import {
   collection,
   onSnapshot,
   addDoc,
+  doc,
+  updateDoc,
   serverTimestamp,
 } from 'firebase/firestore';
 import './styles.css';
@@ -114,7 +116,7 @@ function Login({ phone, setPhone, code, setCode, confirmation, setConfirmation, 
   );
 }
 
-function Dashboard({ users, content, title, setTitle, setMsg }) {
+function Dashboard({ users, content, matches, title, setTitle, setMsg, msg }) {
   const [matchTitle, setMatchTitle] = useState('');
   const [teamA, setTeamA] = useState('');
   const [teamB, setTeamB] = useState('');
@@ -158,9 +160,10 @@ function Dashboard({ users, content, title, setTitle, setMsg }) {
         <div className="cards">
           <div>Users<br /><strong>{users.length}</strong></div>
           <div>Content<br /><strong>{content.length}</strong></div>
-          <div>Live Matches<br /><strong>Firebase</strong></div>
+          <div>Live Matches<br /><strong>{matches.length}</strong></div>
           <div>Withdrawals<br /><strong>Review</strong></div>
         </div>
+        {msg && <p role="status" className="status">{msg}</p>}
         <section style={{ marginTop: 30 }}>
           <h2>Publish Live Cricket Match</h2>
           <form onSubmit={publishMatch} className="matchPublishForm">
@@ -172,6 +175,10 @@ function Dashboard({ users, content, title, setTitle, setMsg }) {
             <button type="submit">Publish Match</button>
           </form>
           <p>Use only a broadcast you own or are licensed to distribute. Keep stream keys and private credentials out of this field.</p>
+        </section>
+        <section style={{ marginTop: 30 }}>
+          <h2>Published Matches</h2>
+          {matches.length === 0 ? <p>No matches have been published yet.</p> : <div className="matchList">{matches.map((match) => <article key={match.id} className="matchRow"><div><strong>{match.title || 'Untitled match'}</strong><p>{match.teamA || 'Team A'} vs {match.teamB || 'Team B'} · {match.status || 'UPCOMING'}</p></div><label>Update status <select value={match.status || 'UPCOMING'} onChange={async (event) => { try { await updateDoc(doc(db, 'matches', match.id), { status: event.target.value }); setMsg('Match status updated.'); } catch (error) { setMsg(error?.message || 'Could not update match status.'); } }}><option value="UPCOMING">Upcoming</option><option value="LIVE">Live</option><option value="COMPLETED">Completed</option></select></label></article>)}</div>}
         </section>
         <section style={{ marginTop: 30 }}>
           <h2>Publish Content</h2>
@@ -199,6 +206,7 @@ function App() {
   const [msg, setMsg] = useState('');
   const [users, setUsers] = useState([]);
   const [content, setContent] = useState([]);
+  const [matches, setMatches] = useState([]);
   const [title, setTitle] = useState('');
 
   useEffect(() => onAuthStateChanged(auth, setUser), []);
@@ -213,9 +221,14 @@ function App() {
       collection(db, 'content'),
       (snapshot) => setContent(snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }))),
     );
+    const unsubscribeMatches = onSnapshot(
+      collection(db, 'matches'),
+      (snapshot) => setMatches(snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }))),
+    );
     return () => {
       unsubscribeUsers();
       unsubscribeContent();
+      unsubscribeMatches();
     };
   }, [user]);
 
@@ -224,9 +237,11 @@ function App() {
       <Dashboard
         users={users}
         content={content}
+        matches={matches}
         title={title}
         setTitle={setTitle}
         setMsg={setMsg}
+        msg={msg}
       />
     );
   }
