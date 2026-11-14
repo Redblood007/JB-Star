@@ -116,7 +116,7 @@ function LivePlayer({ streamUrl }) {
   return <section className="section"><div className="sectionHead"><h2>🔴 Live Cricket</h2><span>{streamUrl ? 'LIVE PLAYER' : 'AWAITING BROADCAST'}</span></div><div className="liveFrame">{youtubeId ? <iframe title="JB-Star authorized YouTube live stream" src={'https://www.youtube-nocookie.com/embed/' + youtubeId} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowFullScreen /> : streamUrl ? <video ref={videoRef} controls playsInline style={{ width:'100%', display:'block', minHeight:220 }} /> : <div className="liveEmpty"><strong>JB-STAR LIVE</strong><p>No authorized broadcast is connected yet.</p><small>Add a YouTube Live watch URL or HLS playback URL through Admin.</small></div>}</div>{error && <p className="status">{error}</p>}<p className="muted" style={{ marginTop:10 }}>Only broadcasts you own or are licensed to distribute should be added.</p></section>;
 }
 
-const CRICKET_API_BASE = (import.meta.env.VITE_CRICKET_API_BASE || '').replace(/\\/$/, '');
+const CRICKET_API_BASE = (import.meta.env.VITE_CRICKET_API_BASE || '').replace(/\/+$/, '');
 
 function CricketCenter() {
   const [tab, setTab] = useState('live');
