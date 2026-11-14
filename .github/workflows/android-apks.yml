@@ -1,4 +1,4 @@
-# Build both JB-Star Android applications on pushes to main.
+# Build debug and signed release APKs for both JB-Star Android applications.
 name: JB-Star Android APKs
 
 on:
@@ -36,21 +36,61 @@ jobs:
         run: npx cap add android
       - name: Sync Capacitor
         run: npx cap sync android
-      - name: Generate debug signing fingerprints
+      - name: Configure release signing
+        env:
+          KEYSTORE_BASE64: ${{ secrets.JBSTAR_KEYSTORE_BASE64 }}
+          STORE_PASSWORD: ${{ secrets.JBSTAR_STORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.JBSTAR_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.JBSTAR_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          test -n "$KEYSTORE_BASE64" || (echo "Missing JBSTAR_KEYSTORE_BASE64 secret" && exit 1)
+          test -n "$STORE_PASSWORD" || (echo "Missing JBSTAR_STORE_PASSWORD secret" && exit 1)
+          test -n "$KEY_ALIAS" || (echo "Missing JBSTAR_KEY_ALIAS secret" && exit 1)
+          test -n "$KEY_PASSWORD" || (echo "Missing JBSTAR_KEY_PASSWORD secret" && exit 1)
+          echo "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/jbstar-release.jks"
+          echo "JBSTAR_KEYSTORE_PATH=$RUNNER_TEMP/jbstar-release.jks" >> "$GITHUB_ENV"
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path("android/app/build.gradle")
+          s = p.read_text()
+          marker = "    buildTypes {"
+          if marker not in s:
+              raise SystemExit("Could not find Android buildTypes block in generated build.gradle")
+          signing = """    signingConfigs {
+                  release {
+                      storeFile file(System.getenv("JBSTAR_KEYSTORE_PATH"))
+                      storePassword System.getenv("STORE_PASSWORD")
+                      keyAlias System.getenv("KEY_ALIAS")
+                      keyPassword System.getenv("KEY_PASSWORD")
+                  }
+              }
+
+          """
+          s = s.replace(marker, signing + marker, 1)
+          release_marker = "        release {"
+          pos = s.find(release_marker, s.find(marker))
+          if pos < 0:
+              raise SystemExit("Could not find release build type in generated build.gradle")
+          insert_at = pos + len(release_marker)
+          s = s[:insert_at] + "\n            signingConfig signingConfigs.release" + s[insert_at:]
+          p.write_text(s)
+          PY
+        working-directory: web
+      - name: Build signed release APK
         working-directory: web/android
-        run: ./gradlew signingReport > signing-report.txt
-      - name: Build debug APK
-        working-directory: web/android
-        run: ./gradlew assembleDebug
-      - name: Upload User APK
+        env:
+          STORE_PASSWORD: ${{ secrets.JBSTAR_STORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.JBSTAR_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.JBSTAR_KEY_PASSWORD }}
+        run: ./gradlew assembleRelease
+      - name: Upload signed User APK
         uses: actions/upload-artifact@v4
         with:
-          name: JB-Star-User-APK
-          path: |
-            web/android/app/build/outputs/apk/debug/app-debug.apk
-            web/android/signing-report.txt
+          name: JB-Star-User-Signed-Release-APK
+          path: web/android/app/build/outputs/apk/release/app-release.apk
           if-no-files-found: error
-          retention-days: 14
+          retention-days: 30
 
   admin-apk:
     name: Build Admin APK
@@ -78,18 +118,58 @@ jobs:
         run: npx cap add android
       - name: Sync Capacitor
         run: npx cap sync android
-      - name: Generate debug signing fingerprints
+      - name: Configure release signing
+        env:
+          KEYSTORE_BASE64: ${{ secrets.JBSTAR_KEYSTORE_BASE64 }}
+          STORE_PASSWORD: ${{ secrets.JBSTAR_STORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.JBSTAR_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.JBSTAR_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          test -n "$KEYSTORE_BASE64" || (echo "Missing JBSTAR_KEYSTORE_BASE64 secret" && exit 1)
+          test -n "$STORE_PASSWORD" || (echo "Missing JBSTAR_STORE_PASSWORD secret" && exit 1)
+          test -n "$KEY_ALIAS" || (echo "Missing JBSTAR_KEY_ALIAS secret" && exit 1)
+          test -n "$KEY_PASSWORD" || (echo "Missing JBSTAR_KEY_PASSWORD secret" && exit 1)
+          echo "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/jbstar-release.jks"
+          echo "JBSTAR_KEYSTORE_PATH=$RUNNER_TEMP/jbstar-release.jks" >> "$GITHUB_ENV"
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path("android/app/build.gradle")
+          s = p.read_text()
+          marker = "    buildTypes {"
+          if marker not in s:
+              raise SystemExit("Could not find Android buildTypes block in generated build.gradle")
+          signing = """    signingConfigs {
+                  release {
+                      storeFile file(System.getenv("JBSTAR_KEYSTORE_PATH"))
+                      storePassword System.getenv("STORE_PASSWORD")
+                      keyAlias System.getenv("KEY_ALIAS")
+                      keyPassword System.getenv("KEY_PASSWORD")
+                  }
+              }
+
+          """
+          s = s.replace(marker, signing + marker, 1)
+          release_marker = "        release {"
+          pos = s.find(release_marker, s.find(marker))
+          if pos < 0:
+              raise SystemExit("Could not find release build type in generated build.gradle")
+          insert_at = pos + len(release_marker)
+          s = s[:insert_at] + "\n            signingConfig signingConfigs.release" + s[insert_at:]
+          p.write_text(s)
+          PY
+        working-directory: admin
+      - name: Build signed release APK
         working-directory: admin/android
-        run: ./gradlew signingReport > signing-report.txt
-      - name: Build debug APK
-        working-directory: admin/android
-        run: ./gradlew assembleDebug
-      - name: Upload Admin APK
+        env:
+          STORE_PASSWORD: ${{ secrets.JBSTAR_STORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.JBSTAR_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.JBSTAR_KEY_PASSWORD }}
+        run: ./gradlew assembleRelease
+      - name: Upload signed Admin APK
         uses: actions/upload-artifact@v4
         with:
-          name: JB-Star-Admin-APK
-          path: |
-            admin/android/app/build/outputs/apk/debug/app-debug.apk
-            admin/android/signing-report.txt
+          name: JB-Star-Admin-Signed-Release-APK
+          path: admin/android/app/build/outputs/apk/release/app-release.apk
           if-no-files-found: error
-          retention-days: 14
+          retention-days: 30
