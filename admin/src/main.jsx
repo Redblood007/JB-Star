@@ -32,7 +32,7 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 
 // Replace this placeholder with the authorized administrator's Firebase Auth UID before enabling Admin access.
-const ADMIN_UID = 'SET_ADMIN_UID_HERE';
+const ADMIN_UID = 'GK24JSFswVerd7cqvhdfmHPb93K3';
 
 function Login({ phone, setPhone, code, setCode, confirmation, setConfirmation, msg, setMsg }) {
   const recaptcha = useRef(null);
