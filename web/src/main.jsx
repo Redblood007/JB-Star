@@ -145,7 +145,7 @@ function App() {
   return (
     <div className="app">
       <header>
-        <div className="logo brand"><img src="/jb-star-logo.svg" alt="JB-Star logo" />JB-STAR</div>
+        <div className="logo brand"><img className="wordmark" src="/jb-star-wordmark.svg" alt="JB STAR" /></div>
         <nav><a>Home</a><a>Live</a><a>Sports</a><a>Movies</a><a>Shows</a></nav>
         {user ? <button onClick={() => signOut(auth)}>Logout</button> : <button onClick={() => setShowLogin(true)}>Login</button>}
       </header>
