@@ -1,0 +1,4 @@
+name = "jb-star-cricket-proxy"
+main = "index.js"
+compatibility_date = "2026-11-14"
+workers_dev = true
