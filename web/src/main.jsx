@@ -113,7 +113,7 @@ function getYouTubeId(value = '') {
 function LivePlayer({ streamUrl }) {
   const videoRef = useRef(null); const [error, setError] = useState(''); const youtubeId = getYouTubeId(streamUrl || '');
   useEffect(() => { const video = videoRef.current; if (!video || !streamUrl || youtubeId) return undefined; setError(''); video.src = streamUrl; const onError = () => setError('This HLS stream cannot be played in this browser/device.'); video.addEventListener('error', onError); return () => { video.removeEventListener('error', onError); video.removeAttribute('src'); video.load(); }; }, [streamUrl, youtubeId]);
-  return <section className="section"><div className="sectionHead"><h2>🔴 Live Cricket</h2><span>{streamUrl ? 'LIVE PLAYER' : 'AWAITING BROADCAST'}</span></div><div className="liveFrame">{youtubeId ? <iframe title="JB-Star authorized YouTube live stream" src={'https://www.youtube-nocookie.com/embed/' + youtubeId} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowFullScreen /> : streamUrl ? <video ref={videoRef} controls playsInline style={{ width:'100%', display:'block', minHeight:220 }} /> : <div className="liveEmpty"><strong>JB-STAR LIVE</strong><p>No authorized broadcast is connected yet.</p><small>Add a YouTube Live watch URL or HLS playback URL through Admin.</small></div>}</div>{error && <p className="status">{error}</p>}<p className="muted" style={{ marginTop:10 }}>Only broadcasts you own or are licensed to distribute should be added.</p></section>;
+  return <section className="section"><div className="sectionHead"><h2>🔴 Live Cricket</h2><span>{streamUrl ? 'LIVE PLAYER' : 'AWAITING BROADCAST'}</span></div><div className="liveFrame">{youtubeId ? <iframe title="JB-Star authorized YouTube live stream" src={'https://www.youtube-nocookie.com/embed/' + youtubeId} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowFullScreen /> : streamUrl ? <video ref={videoRef} controls playsInline style={{ width:'100%', display:'block', minHeight:220 }} /> : <div className="liveEmpty"><strong>JB-STAR LIVE</strong><p>No authorized broadcast is connected yet.</p><small>Publish a LIVE match with a YouTube Live or HLS playback URL through Admin.</small></div>}</div>{error && <p className="status">{error}</p>}<p className="muted" style={{ marginTop:10 }}>Only broadcasts you own or are licensed to distribute should be added.</p></section>;
 }
 
 const CRICKET_API_BASE = import.meta.env.VITE_CRICKET_API_BASE || 'https://us-central1-jb-star-7c8e7.cloudfunctions.net/cricketApi';
@@ -230,6 +230,7 @@ function App() {
   const featuredContent = content.filter((item) => !['movies', 'shows'].includes(item.category));
   const movieItems = content.filter((item) => item.category === 'movies');
   const showItems = content.filter((item) => item.category === 'shows');
+  const currentLiveMatch = matches.find((match) => String(match.status || '').toUpperCase() === 'LIVE' && match.streamUrl);
   const cards = matches.length
     ? matches
     : featuredContent.length
@@ -255,10 +256,10 @@ function App() {
             <p className="eyebrow">LIVE SPORTS • ENTERTAINMENT</p>
             <h1>Watch what you love.</h1>
             <p className="sub">Live cricket, sports and entertainment in one place.</p>
-            <button className="primary" onClick={() => document.getElementById('live-player')?.scrollIntoView({ behavior: 'smooth' })}>Watch Live</button>
+            <button className="primary" onClick={() => { setSelectedMatch(currentLiveMatch || null); document.getElementById('live-player')?.scrollIntoView({ behavior: 'smooth' }); }}>Watch Live</button>
           </div>
         </section>
-        <div id="live-player"><LivePlayer streamUrl={selectedMatch?.streamUrl || DEFAULT_STREAM} /></div>
+        <div id="live-player"><LivePlayer streamUrl={selectedMatch?.streamUrl || currentLiveMatch?.streamUrl || DEFAULT_STREAM} /></div>
         <CricketCenter />
         <section className="section">
           <div className="sectionHead"><h2>Live & Featured</h2><span>{user ? 'Firebase connected' : 'Login to continue'}</span></div>
