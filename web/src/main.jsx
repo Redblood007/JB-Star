@@ -155,7 +155,7 @@ function CricketCenter() {
     return fallback;
   };
   return (
-    <section className="section cricketCenter">
+    <section id="sports" className="section cricketCenter">
       <div className="sectionHead"><h2>🏏 Cricket Center</h2><span>JB STAR SPORTS</span></div>
       <div className="cricketTabs">
         {['live', 'recent', 'upcoming'].map((name) => <button key={name} className={tab === name ? 'primary' : 'secondary'} onClick={() => setTab(name)}>{name === 'live' ? 'Live Matches' : name === 'recent' ? 'Recent Matches' : 'Upcoming'}</button>)}
@@ -187,6 +187,25 @@ function CricketCenter() {
   );
 }
 
+function CatalogSection({ id, title, items, emptyMessage }) {
+  return (
+    <section id={id} className="section catalogSection">
+      <div className="sectionHead"><h2>{title}</h2><span>{items.length} {items.length === 1 ? 'TITLE' : 'TITLES'}</span></div>
+      {items.length ? (
+        <div className="grid">
+          {items.map((item) => (
+            <article key={item.id} className="matchCard">
+              <div className="poster"><span>{title.toUpperCase()}</span></div>
+              <h3>{item.title || item.name || 'Untitled'}</h3>
+              <p>{item.meta || 'Available on JB-Star'}</p>
+            </article>
+          ))}
+        </div>
+      ) : <p className="muted catalogEmpty">{emptyMessage}</p>}
+    </section>
+  );
+}
+
 function App() {
   const [user, setUser] = useState(undefined);
   const [showLogin, setShowLogin] = useState(false);
@@ -208,21 +227,30 @@ function App() {
     };
   }, []);
 
+  const featuredContent = content.filter((item) => !['movies', 'shows'].includes(item.category));
+  const movieItems = content.filter((item) => item.category === 'movies');
+  const showItems = content.filter((item) => item.category === 'shows');
   const cards = matches.length
     ? matches
-    : content.length
-      ? content
+    : featuredContent.length
+      ? featuredContent
       : [{ id: 'fallback', title: 'Live Cricket', meta: 'Firebase content will appear here' }];
 
   return (
     <div className="app">
       <header>
         <div className="logo brand"><img className="wordmark" src={`${import.meta.env.BASE_URL}jb-star-wordmark.svg`} alt="JB STAR" /></div>
-        <nav><a>Home</a><a>Live</a><a>Sports</a><a>Movies</a><a>Shows</a></nav>
+        <nav aria-label="Main navigation">
+          <a href="#home">Home</a>
+          <a href="#live-player">Live</a>
+          <a href="#sports">Sports</a>
+          <a href="#movies">Movies</a>
+          <a href="#shows">Shows</a>
+        </nav>
         {user ? <button onClick={() => signOut(auth)}>Logout</button> : <button onClick={() => setShowLogin(true)}>Login</button>}
       </header>
       <main>
-        <section className="hero">
+        <section id="home" className="hero">
           <div>
             <p className="eyebrow">LIVE SPORTS • ENTERTAINMENT</p>
             <h1>Watch what you love.</h1>
@@ -245,6 +273,8 @@ function App() {
             ))}
           </div>
         </section>
+        <CatalogSection id="movies" title="Movies" items={movieItems} emptyMessage="No movies have been added yet." />
+        <CatalogSection id="shows" title="Shows" items={showItems} emptyMessage="No shows have been added yet." />
       </main>
       {showLogin && <Login onClose={() => setShowLogin(false)} />}
     </div>

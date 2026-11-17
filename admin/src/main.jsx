@@ -117,6 +117,7 @@ function Login({ phone, setPhone, code, setCode, confirmation, setConfirmation, 
 }
 
 function Dashboard({ users, content, matches, title, setTitle, setMsg, msg }) {
+  const [contentCategory, setContentCategory] = useState('featured');
   const [matchTitle, setMatchTitle] = useState('');
   const [teamA, setTeamA] = useState('');
   const [teamB, setTeamB] = useState('');
@@ -139,6 +140,7 @@ function Dashboard({ users, content, matches, title, setTitle, setMsg, msg }) {
     try {
       await addDoc(collection(db, 'content'), {
         title: cleanTitle,
+        category: contentCategory,
         meta: 'Published from Admin',
         createdAt: serverTimestamp(),
       });
@@ -189,6 +191,11 @@ function Dashboard({ users, content, matches, title, setTitle, setMsg, msg }) {
               placeholder="Content title"
               style={{ padding: 12, borderRadius: 10 }}
             />
+            <select value={contentCategory} onChange={(event) => setContentCategory(event.target.value)} style={{ padding: 12, borderRadius: 10 }} aria-label="Content category">
+              <option value="featured">Featured</option>
+              <option value="movies">Movie</option>
+              <option value="shows">Show</option>
+            </select>
             <button type="submit">Publish</button>
           </form>
           <p>Published items are stored in Firestore and appear in the User app in real time.</p>
