@@ -5,7 +5,7 @@ import { auth } from './firebase';
 import { subscribeToContent, subscribeToMatches, upsertUser } from './data';
 import './styles.css';
 
-const DEFAULT_STREAM = 'https://hls-harbor-livepush.akamaized.net/live_cdn/nsqIStpj8PaG-Ev/emcQJ0pGpremocy/index.m3u8';
+const DEFAULT_STREAM = 'https://watch.livepush.io/live/emcwDAMiNULIwd7P';
 
 function Login({ onClose }) {
   const [phone, setPhone] = useState('');
@@ -134,11 +134,17 @@ function getHlsSource(value = '') {
     return url.pathname.toLowerCase().endsWith('.m3u8') ? url.toString() : '';
   } catch { return ''; }
 }
+function getLivePushPlayerUrl(value = '') {
+  try {
+    const url = new URL(value);
+    return url.protocol === 'https:' && url.hostname === 'watch.livepush.io' && url.pathname.startsWith('/live/') ? url.toString() : '';
+  } catch { return ''; }
+}
 function LivePlayer({ streamUrl }) {
-  const videoRef = useRef(null); const [error, setError] = useState(''); const youtubeId = getYouTubeId(streamUrl || ''); const dashSource = getDashSource(streamUrl || ''); const hlsSource = getHlsSource(streamUrl || '');
+  const videoRef = useRef(null); const [error, setError] = useState(''); const youtubeId = getYouTubeId(streamUrl || ''); const dashSource = getDashSource(streamUrl || ''); const hlsSource = getHlsSource(streamUrl || ''); const livePushPlayerUrl = getLivePushPlayerUrl(streamUrl || '');
   useEffect(() => {
     const video = videoRef.current;
-    if (!video || !streamUrl || youtubeId) return undefined;
+    if (!video || !streamUrl || youtubeId || livePushPlayerUrl) return undefined;
     setError('');
     let active = true;
     let player = null;
@@ -183,8 +189,8 @@ function LivePlayer({ streamUrl }) {
     video.src = streamUrl;
     video.addEventListener('error', onError);
     return () => { active = false; video.removeEventListener('error', onError); video.removeAttribute('src'); video.load(); };
-  }, [streamUrl, youtubeId, dashSource, hlsSource]);
-  return <section className="section"><div className="sectionHead"><h2>🔴 Live Cricket</h2><span>{streamUrl ? 'LIVE PLAYER' : 'AWAITING BROADCAST'}</span></div><div className="liveFrame">{youtubeId ? <iframe title="JB-Star authorized YouTube live stream" src={'https://www.youtube-nocookie.com/embed/' + youtubeId} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowFullScreen /> : streamUrl ? <video ref={videoRef} controls playsInline style={{ width:'100%', display:'block', minHeight:220 }} /> : <div className="liveEmpty"><strong>JB-STAR LIVE</strong><p>No authorized broadcast is connected yet.</p><small>Publish a LIVE match with a YouTube Live or HLS/DASH playback URL through Admin.</small></div>}</div>{error && <p className="status">{error}</p>}<p className="muted" style={{ marginTop:10 }}>Only broadcasts you own or are licensed to distribute should be added.</p></section>;
+  }, [streamUrl, youtubeId, dashSource, hlsSource, livePushPlayerUrl]);
+  return <section className="section"><div className="sectionHead"><h2>🔴 Live Cricket</h2><span>{streamUrl ? 'LIVE PLAYER' : 'AWAITING BROADCAST'}</span></div><div className="liveFrame">{youtubeId ? <iframe title="JB-Star authorized YouTube live stream" src={'https://www.youtube-nocookie.com/embed/' + youtubeId} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowFullScreen /> : livePushPlayerUrl ? <iframe title="JB-Star authorized LivePush player" src={livePushPlayerUrl} allow="autoplay; fullscreen; picture-in-picture" allowFullScreen /> : streamUrl ? <video ref={videoRef} controls playsInline style={{ width:'100%', display:'block', minHeight:220 }} /> : <div className="liveEmpty"><strong>JB-STAR LIVE</strong><p>No authorized broadcast is connected yet.</p><small>Publish a LIVE match with a YouTube Live, LivePush, or HLS/DASH playback URL through Admin.</small></div>}</div>{error && <p className="status">{error}</p>}<p className="muted" style={{ marginTop:10 }}>Only broadcasts you own or are licensed to distribute should be added.</p></section>;
 }
 
 const CRICKET_API_BASE = import.meta.env.VITE_CRICKET_API_BASE || 'https://us-central1-jb-star-7c8e7.cloudfunctions.net/cricketApi';
@@ -354,4 +360,5 @@ function App() {
 }
 
 createRoot(document.getElementById('root')).render(<App />);
+
 
