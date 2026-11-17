@@ -72,7 +72,7 @@ function Login({ phone, setPhone, code, setCode, confirmation, setConfirmation, 
         'auth/too-many-requests': 'SMS limit reached or too many attempts. Try again later.',
         'auth/quota-exceeded': 'Firebase SMS quota exceeded. Try later or check the Firebase plan.',
         'auth/app-not-authorized': 'This app domain is not authorized in Firebase Authentication settings.',
-        'auth/billing-not-enabled': 'Firebase billing is not enabled for this SMS operation.',
+        'auth/billing-not-enabled': 'Real SMS login needs Firebase Blaze billing and SMS may be charged. For testing without SMS, configure a fictional phone number and code in Firebase Console > Authentication > Sign-in method > Phone numbers for testing.',
       };
       setMsg(messages[error?.code] || `OTP failed (${error?.code || 'unknown'}): ${error?.message || 'Check Firebase Phone Authentication settings.'}`);
     }
@@ -117,6 +117,7 @@ function Login({ phone, setPhone, code, setCode, confirmation, setConfirmation, 
 }
 
 function Dashboard({ users, content, matches, title, setTitle, setMsg, msg }) {
+  const [contentCategory, setContentCategory] = useState('featured');
   const [matchTitle, setMatchTitle] = useState('');
   const [teamA, setTeamA] = useState('');
   const [teamB, setTeamB] = useState('');
@@ -139,6 +140,7 @@ function Dashboard({ users, content, matches, title, setTitle, setMsg, msg }) {
     try {
       await addDoc(collection(db, 'content'), {
         title: cleanTitle,
+        category: contentCategory,
         meta: 'Published from Admin',
         createdAt: serverTimestamp(),
       });
@@ -171,7 +173,7 @@ function Dashboard({ users, content, matches, title, setTitle, setMsg, msg }) {
             <input value={teamA} onChange={(event) => setTeamA(event.target.value)} placeholder="Team A" />
             <input value={teamB} onChange={(event) => setTeamB(event.target.value)} placeholder="Team B" />
             <select value={matchStatus} onChange={(event) => setMatchStatus(event.target.value)}><option value="UPCOMING">Upcoming</option><option value="LIVE">Live</option><option value="COMPLETED">Completed</option></select>
-            <input value={streamUrl} onChange={(event) => setStreamUrl(event.target.value)} placeholder="Authorized YouTube watch URL or HLS URL (optional)" />
+            <input value={streamUrl} onChange={(event) => setStreamUrl(event.target.value)} placeholder="Authorized YouTube, LivePush player, HLS, or DASH URL (optional)" />
             <button type="submit">Publish Match</button>
           </form>
           <p>Use only a broadcast you own or are licensed to distribute. Keep stream keys and private credentials out of this field.</p>
@@ -189,6 +191,11 @@ function Dashboard({ users, content, matches, title, setTitle, setMsg, msg }) {
               placeholder="Content title"
               style={{ padding: 12, borderRadius: 10 }}
             />
+            <select value={contentCategory} onChange={(event) => setContentCategory(event.target.value)} style={{ padding: 12, borderRadius: 10 }} aria-label="Content category">
+              <option value="featured">Featured</option>
+              <option value="movies">Movie</option>
+              <option value="shows">Show</option>
+            </select>
             <button type="submit">Publish</button>
           </form>
           <p>Published items are stored in Firestore and appear in the User app in real time.</p>
@@ -271,3 +278,5 @@ function App() {
 }
 
 createRoot(document.getElementById('root')).render(<App />);
+
+

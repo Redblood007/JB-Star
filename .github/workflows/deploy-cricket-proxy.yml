@@ -1,11 +1,6 @@
 name: Deploy JB STAR Cricket API Proxy
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - "workers/cricket-proxy/**"
-      - ".github/workflows/deploy-cricket-proxy.yml"
   workflow_dispatch:
 
 permissions:
@@ -17,10 +12,16 @@ concurrency:
 
 jobs:
   deploy:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
 
       - name: Validate deployment secrets
         env:
@@ -41,7 +42,7 @@ jobs:
           fi
 
       - name: Install Wrangler
-        run: npm install --global wrangler@4
+        run: npm install --global wrangler@4.163.0
 
       - name: Deploy Worker
         working-directory: workers/cricket-proxy

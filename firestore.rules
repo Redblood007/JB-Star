@@ -6,9 +6,25 @@ service cloud.firestore {
       return request.auth != null && request.auth.uid == 'GK24JSFswVerd7cqvhdfmHPb93K3';
     }
 
+    function isUser(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+
+    function validUserProfile(userId) {
+      return request.resource.data.keys().hasOnly(['uid', 'phoneNumber', 'updatedAt'])
+        && request.resource.data.keys().hasAll(['uid', 'phoneNumber', 'updatedAt'])
+        && request.resource.data.uid == userId
+        && (request.resource.data.phoneNumber == null || request.resource.data.phoneNumber is string)
+        && request.resource.data.updatedAt == request.time;
+    }
+
     match /users/{userId} {
-      allow create, read, update: if request.auth != null && request.auth.uid == userId;
-      allow read, list, update, delete: if isAdmin();
+      allow create: if isUser(userId) && validUserProfile(userId);
+      allow read: if isUser(userId) || isAdmin();
+      allow update: if isAdmin() || (isUser(userId)
+        && validUserProfile(userId)
+        && request.resource.data.uid == resource.data.uid);
+      allow delete: if isAdmin();
     }
 
     match /content/{documentId} {
