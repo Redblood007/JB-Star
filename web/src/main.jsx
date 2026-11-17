@@ -134,7 +134,7 @@ function CricketCenter() {
     setError('');
     fetch(`${CRICKET_API_BASE}/${tab}`, { headers: { Accept: 'application/json' } })
       .then(async (response) => {
-        if (!response.ok) throw new Error(`Cricket service returned HTTP ${response.status}`);
+        if (!response.ok) throw new Error('Cricket scores are temporarily unavailable. Please try again later.');
         return response.json();
       })
       .then((payload) => {
@@ -142,7 +142,7 @@ function CricketCenter() {
         const data = payload?.data ?? payload?.matches ?? payload?.response ?? payload;
         setItems(Array.isArray(data) ? data : Array.isArray(data?.matches) ? data.matches : []);
       })
-      .catch((err) => { if (active) setError(err.message || 'Could not load cricket data.'); })
+      .catch((err) => { if (active) setError(err instanceof TypeError ? 'Cricket scores are temporarily unavailable. Please try again later.' : err.message || 'Could not load cricket data.'); })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, [tab]);
