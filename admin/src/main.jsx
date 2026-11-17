@@ -173,7 +173,7 @@ function Dashboard({ users, content, matches, title, setTitle, setMsg, msg }) {
             <input value={teamA} onChange={(event) => setTeamA(event.target.value)} placeholder="Team A" />
             <input value={teamB} onChange={(event) => setTeamB(event.target.value)} placeholder="Team B" />
             <select value={matchStatus} onChange={(event) => setMatchStatus(event.target.value)}><option value="UPCOMING">Upcoming</option><option value="LIVE">Live</option><option value="COMPLETED">Completed</option></select>
-            <input value={streamUrl} onChange={(event) => setStreamUrl(event.target.value)} placeholder="Authorized YouTube watch URL or HLS URL (optional)" />
+            <input value={streamUrl} onChange={(event) => setStreamUrl(event.target.value)} placeholder="Authorized YouTube, HLS, or DASH playback URL (optional)" />
             <button type="submit">Publish Match</button>
           </form>
           <p>Use only a broadcast you own or are licensed to distribute. Keep stream keys and private credentials out of this field.</p>
@@ -278,3 +278,4 @@ function App() {
 }
 
 createRoot(document.getElementById('root')).render(<App />);
+

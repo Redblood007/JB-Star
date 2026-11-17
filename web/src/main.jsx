@@ -5,7 +5,7 @@ import { auth } from './firebase';
 import { subscribeToContent, subscribeToMatches, upsertUser } from './data';
 import './styles.css';
 
-const DEFAULT_STREAM = ''; // Configure an authorized broadcast URL in Firebase/Admin.
+const DEFAULT_STREAM = 'https://hls-harbor-livepush.akamaized.net/live_cdn/nsqIStpj8PaG-Ev/emcQJ0pGpremocy/index.m3u8';
 
 function Login({ onClose }) {
   const [phone, setPhone] = useState('');
@@ -114,10 +114,77 @@ function getYouTubeId(value = '') {
   try { const url = new URL(value); if (url.hostname.includes('youtu.be')) return url.pathname.slice(1); if (url.hostname.includes('youtube.com')) { if (url.pathname === '/watch') return url.searchParams.get('v') || ''; const parts = url.pathname.split('/').filter(Boolean); if (['live','embed','shorts'].includes(parts[0])) return parts[1] || ''; } } catch {}
   return '';
 }
+function getDashSource(value = '') {
+  try {
+    const url = new URL(value);
+    if (url.protocol !== 'https:') return '';
+    if (url.hostname === 'livepush.io' && url.pathname === '/dash-player/index.html') {
+      return getDashSource(url.searchParams.get('src') || '');
+    }
+    return url.pathname.toLowerCase().endsWith('.mpd') ? url.toString() : '';
+  } catch { return ''; }
+}
+function getHlsSource(value = '') {
+  try {
+    const url = new URL(value);
+    if (url.protocol !== 'https:') return '';
+    if (url.hostname === 'livepush.io' && url.pathname === '/hlsplayer/index.html') {
+      return getHlsSource(url.searchParams.get('src') || '');
+    }
+    return url.pathname.toLowerCase().endsWith('.m3u8') ? url.toString() : '';
+  } catch { return ''; }
+}
 function LivePlayer({ streamUrl }) {
-  const videoRef = useRef(null); const [error, setError] = useState(''); const youtubeId = getYouTubeId(streamUrl || '');
-  useEffect(() => { const video = videoRef.current; if (!video || !streamUrl || youtubeId) return undefined; setError(''); video.src = streamUrl; const onError = () => setError('This HLS stream cannot be played in this browser/device.'); video.addEventListener('error', onError); return () => { video.removeEventListener('error', onError); video.removeAttribute('src'); video.load(); }; }, [streamUrl, youtubeId]);
-  return <section className="section"><div className="sectionHead"><h2>🔴 Live Cricket</h2><span>{streamUrl ? 'LIVE PLAYER' : 'AWAITING BROADCAST'}</span></div><div className="liveFrame">{youtubeId ? <iframe title="JB-Star authorized YouTube live stream" src={'https://www.youtube-nocookie.com/embed/' + youtubeId} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowFullScreen /> : streamUrl ? <video ref={videoRef} controls playsInline style={{ width:'100%', display:'block', minHeight:220 }} /> : <div className="liveEmpty"><strong>JB-STAR LIVE</strong><p>No authorized broadcast is connected yet.</p><small>Publish a LIVE match with a YouTube Live or HLS playback URL through Admin.</small></div>}</div>{error && <p className="status">{error}</p>}<p className="muted" style={{ marginTop:10 }}>Only broadcasts you own or are licensed to distribute should be added.</p></section>;
+  const videoRef = useRef(null); const [error, setError] = useState(''); const youtubeId = getYouTubeId(streamUrl || ''); const dashSource = getDashSource(streamUrl || ''); const hlsSource = getHlsSource(streamUrl || '');
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video || !streamUrl || youtubeId) return undefined;
+    setError('');
+    let active = true;
+    let player = null;
+    const onError = () => {
+      if (active) setError('This stream could not be played. Check that the playback URL is active and allows web video playback.');
+    };
+
+    if (hlsSource) {
+      video.addEventListener('error', onError);
+      import('hls.js').then((module) => {
+        if (!active) return;
+        const Hls = module.default || module;
+        if (Hls.isSupported()) {
+          player = new Hls();
+          player.on(Hls.Events.ERROR, (_event, data) => { if (active && data.fatal) onError(); });
+          player.loadSource(hlsSource);
+          player.attachMedia(video);
+        } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+          video.src = hlsSource;
+        } else {
+          setError('HLS playback is not supported on this device.');
+        }
+      }).catch(() => { if (active) setError('The HLS video player could not be loaded. Please refresh and try again.'); });
+      return () => { active = false; video.removeEventListener('error', onError); player?.destroy(); video.removeAttribute('src'); video.load(); };
+    }
+
+    if (dashSource) {
+      import('dashjs').then((module) => {
+        if (!active) return;
+        const dashjs = module.default || module;
+        player = dashjs.MediaPlayer().create();
+        player.on(dashjs.MediaPlayer.events.ERROR, onError);
+        player.initialize(video, dashSource, false);
+      }).catch(() => { if (active) setError('The DASH video player could not be loaded. Please refresh and try again.'); });
+      return () => { active = false; player?.reset(); video.removeAttribute('src'); video.load(); };
+    }
+
+    if (/^rtmps?:\/\//i.test(streamUrl)) {
+      setError('RTMP is for sending a stream from an encoder. Use the HLS or DASH playback URL here.');
+      return () => { active = false; };
+    }
+    video.src = streamUrl;
+    video.addEventListener('error', onError);
+    return () => { active = false; video.removeEventListener('error', onError); video.removeAttribute('src'); video.load(); };
+  }, [streamUrl, youtubeId, dashSource, hlsSource]);
+  return <section className="section"><div className="sectionHead"><h2>🔴 Live Cricket</h2><span>{streamUrl ? 'LIVE PLAYER' : 'AWAITING BROADCAST'}</span></div><div className="liveFrame">{youtubeId ? <iframe title="JB-Star authorized YouTube live stream" src={'https://www.youtube-nocookie.com/embed/' + youtubeId} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowFullScreen /> : streamUrl ? <video ref={videoRef} controls playsInline style={{ width:'100%', display:'block', minHeight:220 }} /> : <div className="liveEmpty"><strong>JB-STAR LIVE</strong><p>No authorized broadcast is connected yet.</p><small>Publish a LIVE match with a YouTube Live or HLS/DASH playback URL through Admin.</small></div>}</div>{error && <p className="status">{error}</p>}<p className="muted" style={{ marginTop:10 }}>Only broadcasts you own or are licensed to distribute should be added.</p></section>;
 }
 
 const CRICKET_API_BASE = import.meta.env.VITE_CRICKET_API_BASE || 'https://us-central1-jb-star-7c8e7.cloudfunctions.net/cricketApi';
@@ -287,3 +354,4 @@ function App() {
 }
 
 createRoot(document.getElementById('root')).render(<App />);
+
