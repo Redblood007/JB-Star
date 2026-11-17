@@ -2,8 +2,6 @@
 name: JB-Star Android APKs
 
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -12,6 +10,7 @@ permissions:
 jobs:
   user-apk:
     name: Build User APK
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -28,8 +27,10 @@ jobs:
         with:
           distribution: temurin
           java-version: '21'
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v4
       - name: Install dependencies
-        run: npm install
+        run: npm ci
       - name: Build web
         run: npm run build
       - name: Add Android platform
@@ -84,6 +85,15 @@ jobs:
           KEY_ALIAS: ${{ secrets.JBSTAR_KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.JBSTAR_KEY_PASSWORD }}
         run: ./gradlew assembleRelease
+      - name: Verify User APK signature
+        shell: bash
+        run: |
+          set -euo pipefail
+          apk="web/android/app/build/outputs/apk/release/app-release.apk"
+          test -s "$apk"
+          apksigner="$(find "$ANDROID_HOME/build-tools" -type f -name apksigner | sort -V | tail -n 1)"
+          test -n "$apksigner"
+          "$apksigner" verify --verbose "$apk"
       - name: Upload signed User APK
         uses: actions/upload-artifact@v4
         with:
@@ -94,6 +104,7 @@ jobs:
 
   admin-apk:
     name: Build Admin APK
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -110,8 +121,10 @@ jobs:
         with:
           distribution: temurin
           java-version: '21'
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v4
       - name: Install dependencies
-        run: npm install
+        run: npm ci
       - name: Build admin web
         run: npm run build
       - name: Add Android platform
@@ -166,6 +179,15 @@ jobs:
           KEY_ALIAS: ${{ secrets.JBSTAR_KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.JBSTAR_KEY_PASSWORD }}
         run: ./gradlew assembleRelease
+      - name: Verify Admin APK signature
+        shell: bash
+        run: |
+          set -euo pipefail
+          apk="admin/android/app/build/outputs/apk/release/app-release.apk"
+          test -s "$apk"
+          apksigner="$(find "$ANDROID_HOME/build-tools" -type f -name apksigner | sort -V | tail -n 1)"
+          test -n "$apksigner"
+          "$apksigner" verify --verbose "$apk"
       - name: Upload signed Admin APK
         uses: actions/upload-artifact@v4
         with:

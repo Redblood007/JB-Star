@@ -34,7 +34,7 @@ export default {
     }
 
     const url = new URL(request.url);
-    const key = url.pathname.replace(/^\\/+|\\/+$/g, "");
+    const key = url.pathname.replace(/^\/+|\/+$/g, "");
     const route = ROUTES[key];
     if (!route) {
       return Response.json({ error: "Unknown endpoint. Use /live, /recent, or /upcoming." }, { status: 404, headers: cors });

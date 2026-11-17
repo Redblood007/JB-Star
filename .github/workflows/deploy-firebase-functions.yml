@@ -1,12 +1,6 @@
 name: Deploy JB STAR Firebase Functions
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - "functions/**"
-      - "firebase.json"
-      - ".github/workflows/deploy-firebase-functions.yml"
   workflow_dispatch:
 
 permissions:
@@ -14,6 +8,7 @@ permissions:
 
 jobs:
   deploy:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -23,10 +18,10 @@ jobs:
         with:
           node-version: 20
       - name: Install Firebase CLI
-        run: npm install --global firebase-tools
+        run: npm install --global firebase-tools@15.36.0
       - name: Install function dependencies
         working-directory: functions
-        run: npm install
+        run: npm ci
       - name: Validate and activate Firebase credentials
         env:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
