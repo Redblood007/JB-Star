@@ -72,7 +72,7 @@ function Login({ phone, setPhone, code, setCode, confirmation, setConfirmation, 
         'auth/too-many-requests': 'SMS limit reached or too many attempts. Try again later.',
         'auth/quota-exceeded': 'Firebase SMS quota exceeded. Try later or check the Firebase plan.',
         'auth/app-not-authorized': 'This app domain is not authorized in Firebase Authentication settings.',
-        'auth/billing-not-enabled': 'Firebase billing is not enabled for this SMS operation.',
+        'auth/billing-not-enabled': 'Real SMS login needs Firebase Blaze billing and SMS may be charged. For testing without SMS, configure a fictional phone number and code in Firebase Console > Authentication > Sign-in method > Phone numbers for testing.',
       };
       setMsg(messages[error?.code] || `OTP failed (${error?.code || 'unknown'}): ${error?.message || 'Check Firebase Phone Authentication settings.'}`);
     }

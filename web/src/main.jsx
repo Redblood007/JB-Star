@@ -59,7 +59,11 @@ function Login({ onClose }) {
       setConfirmation(result);
       setMessage('OTP sent. Check your SMS.');
     } catch (error) {
-      setMessage('Firebase ' + (error?.code || 'error') + ': ' + (error?.message || 'Could not send OTP.'));
+      if (['auth/billing-not-enabled', 'billing-not-enabled'].includes(error?.code)) {
+        setMessage('Real SMS login needs Firebase Blaze billing and SMS may be charged. For testing without SMS, configure a fictional phone number and code in Firebase Console > Authentication > Sign-in method > Phone numbers for testing.');
+      } else {
+        setMessage('Firebase ' + (error?.code || 'error') + ': ' + (error?.message || 'Could not send OTP.'));
+      }
     } finally {
       setBusy(false);
     }
